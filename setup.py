@@ -20,6 +20,9 @@ setup(
         'test': [
             'pytest',
         ],
+        'standalone': [
+            'nrai_rosutils @ git+https://github.com/NewcastleRacingAI/nrai_rosutils.git',
+        ]
     },
     entry_points={
         'console_scripts': [
