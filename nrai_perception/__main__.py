@@ -1,11 +1,15 @@
 from argparse import ArgumentParser, Namespace
-from .code import process_pose, process_camera, process_image
+
 from nrai_rosutils import RosBag
+
+from .code import process_camera, process_image, process_pose
+
 
 class AppNamespace(Namespace):
     input_bag: str
     topic: str
     play: bool
+
 
 def parse_args() -> ArgumentParser:
     parser = ArgumentParser(description="nrai-perception")
@@ -13,6 +17,7 @@ def parse_args() -> ArgumentParser:
     parser.add_argument("-t", "--topic", type=str, help="Topic to read from the bag file", default="")
     parser.add_argument("-p", "--play", action="store_true", help="Play back the bag file messages")
     return parser
+
 
 def process_msg(topic: str, timestamp: float, msg: object) -> object:
     if topic == "/pose":
@@ -22,6 +27,7 @@ def process_msg(topic: str, timestamp: float, msg: object) -> object:
     if topic == "/zed/zed_node/rgb/color/rect/image":
         return process_image(msg)
     return
+
 
 def main(args: list[str] | None = None) -> int:
     args: AppNamespace = parse_args().parse_args(args)
@@ -40,6 +46,7 @@ def main(args: list[str] | None = None) -> int:
                 print(f" - {topic}")
 
     return 0
+
 
 if __name__ == "__main__":
     exit(main())

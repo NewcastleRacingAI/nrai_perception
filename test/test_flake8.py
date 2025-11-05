@@ -17,15 +17,11 @@ import pytest
 try:
     from ament_flake8.main import main_with_errors
 except ImportError:
-    pytest.skip(
-        'ament_flake8 module not found, skipping flake8 tests', allow_module_level=True
-    )
+    pytest.skip("ament_flake8 module not found, skipping flake8 tests", allow_module_level=True)
 
 
 @pytest.mark.flake8
 @pytest.mark.linter
 def test_flake8():
     rc, errors = main_with_errors(argv=[])
-    assert rc == 0, \
-        'Found %d code style errors / warnings:\n' % len(errors) + \
-        '\n'.join(errors)
+    assert rc == 0, "Found %d code style errors / warnings:\n" % len(errors) + "\n".join(errors)
