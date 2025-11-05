@@ -1,5 +1,5 @@
 from argparse import ArgumentParser, Namespace
-from .code import process_pose
+from .code import process_pose, process_camera, process_image
 from nrai_rosutils import RosBag
 
 class AppNamespace(Namespace):
@@ -17,15 +17,20 @@ def parse_args() -> ArgumentParser:
 def process_msg(topic: str, timestamp: float, msg: object) -> object:
     if topic == "/pose":
         return process_pose(msg)
-    raise NotImplementedError(f"Processing for topic {topic} is not implemented.")
+    if topic == "/zed/zed_node/rgb/color/rect/image/camera_info":
+        return process_camera(msg)
+    if topic == "/zed/zed_node/rgb/color/rect/image":
+        return process_image(msg)
+    return
 
 def main(args: list[str] | None = None) -> int:
     args: AppNamespace = parse_args().parse_args(args)
 
     with RosBag(args.input_bag) as bag:
         if args.play:
-                for topic, timestamp, msg in bag.play():
-                    process_msg(topic, timestamp, msg)
+            for topic, timestamp, msg in bag.play():
+                process_msg(topic, timestamp, msg)
+            return 0
         if args.topic:
             print(f"Reading messages from topic: {args.topic}")
             print(bag.get_messages(args.topic))

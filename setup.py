@@ -11,7 +11,7 @@ setup(
             ['resource/' + PACKAGE_NAME]),
         ('share/' + PACKAGE_NAME, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', "opencv-python>=4.12.0.88", "numpy>=2.2.6"],
     zip_safe=True,
     maintainer='Newcastle Racing AI',
     description='Newcastle Racing AI module for perception',

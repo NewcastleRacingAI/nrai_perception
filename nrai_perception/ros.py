@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-# from .code import process_pose
+from .code import process_image
 
 class Perception(Node):
 
