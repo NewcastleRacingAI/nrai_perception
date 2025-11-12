@@ -49,7 +49,10 @@ Then, use pip to install the package locally in edit mode (`-e`)
 pip3 install -e .[standalone]
 ```
 
-All changes you make to the package will be effective immediately, without the need of reinstalling it.
+> [!NOTE]  
+> If you are having issues during the installation, consider removing the `-e` flag, or adding the `--user` flag.
+
+All changes you make to the package will be effective immediately, without the need of reinstalling it (provided you are using the `-e` flag).
 
 ### Use
 
@@ -61,3 +64,50 @@ python3 -m nrai_perception <path to rosbag>
 
 The entrypoint expects a [rosbag2](https://github.com/ros2/rosbag2) file.
 In simple terms, a recording of the messages exchanged by the topics in a ROS network.
+
+#### List of topics
+
+If no other arguments are provided, the entrypoint will list all the topics in the rosbag
+
+```bash
+python3 -m nrai_perception <path to rosbag>
+```
+
+#### List of messages in a topic
+
+To list all the messages in a specific topic, use the `--list-messages` argument
+
+```bash
+python3 -m nrai_perception <path to rosbag> --topic <topic name> 
+```
+
+Note that this operation may take a while if the rosbag is large, and the output may be very long.
+
+#### Playback the rosbag
+
+To playback the rosbag, use the `--play` argument
+
+```bash
+python3 -m nrai_perception <path to rosbag> --play
+```
+
+All the messages in the rosbag will be processed in order and sent through the `process_msg` function in the `nrai_perception.__main__` file.
+The function will then filter only the topics it is interested in, and call the appropriate processing functions from the `nrai_perception.code` module.
+Then, it is up to you to modify those functions to implement your own perception algorithms.
+
+```mermaid
+flowchart LR
+bag[Rosbag2 file]
+subgraph nrai_perception
+    direction TB
+    p[process_msg]
+    i[process_pose]
+    c[process_camera]
+    m[process_image]
+end
+
+bag --> p
+p --> i
+p --> c
+p --> m
+```
