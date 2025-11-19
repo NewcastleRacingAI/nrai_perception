@@ -22,6 +22,9 @@ setup(
         "standalone": [
             "nrai_rosutils @ git+https://github.com/NewcastleRacingAI/nrai_rosutils.git",
         ],
+        "models": [
+            "ultralytics",
+        ]
     },
     entry_points={
         "console_scripts": [
