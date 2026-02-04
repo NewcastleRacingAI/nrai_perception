@@ -30,6 +30,8 @@ setup(
         "console_scripts": [
             "nrai_perception = nrai_perception.__main__:main",
             "ros_node = nrai_perception.ros:main",
+            'zed_yolo_track_node = nrai_perception.zed_yolo_track:main',
+
         ],
     },
 )
