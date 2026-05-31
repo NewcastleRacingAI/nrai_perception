@@ -9,8 +9,10 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + PACKAGE_NAME]),
         ("share/" + PACKAGE_NAME, ["package.xml"]),
+        ("lib/resource/", ["resource/best.pt"]),
     ],
-    install_requires=["setuptools", "opencv-python>=4.12.0.88", "numpy>=2.2.6"],
+    #install_requires=["setuptools", "opencv-python>=4.12.0.88", "numpy==2.2.6"],
+    install_requires=["setuptools", "opencv-python>=4.12.0.88", "numpy==1.26.4"],
     zip_safe=True,
     maintainer="Newcastle Racing AI",
     description="Newcastle Racing AI module for perception",
@@ -31,7 +33,7 @@ setup(
             "nrai_perception = nrai_perception.__main__:main",
             "ros_node = nrai_perception.ros:main",
             'zed_yolo_track_node = nrai_perception.zed_yolo_track:main',
-
+            'zed_yolo_track_node_eufs = nrai_perception.zed_yolo_track:eufs',
         ],
     },
 )

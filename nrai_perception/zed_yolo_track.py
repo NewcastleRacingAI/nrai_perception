@@ -2,6 +2,8 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -9,11 +11,11 @@ from ultralytics import YOLO
 
 class ZEDYOLOTrack(Node):
 
-    def __init__(self):
+    def __init__(self, image, depth, path):
         super().__init__('zed_yolo_track')
 
         self.bridge = CvBridge()
-        self.model = YOLO("nrai_perception/resource/best.pt")
+        self.model = YOLO(path)
 
         # ZED intrinsics (tune if needed)
         self.fx = 700.0
@@ -23,8 +25,10 @@ class ZEDYOLOTrack(Node):
 
         self.depth_frame = None
 
-        self.create_subscription(Image, "/zed/zed_node/rgb/color/rect/image", self.rgb_callback, 10)
-        self.create_subscription(Image, "/zed/zed_node/depth/depth_registered", self.depth_callback, 10)
+        self.create_subscription(Image, image, self.rgb_callback, 10)
+        self.create_subscription(Image, depth, self.depth_callback, 10)
+        
+        self.publisher_path = self.create_publisher(Path, '/path', 10)
 
         self.get_logger().info("ZED YOLO Track Node Started")
 
@@ -103,7 +107,8 @@ class ZEDYOLOTrack(Node):
                 mz = (L[1] + best[1]) / 2
                 midpoints.append((mx, mz))
         print("Midpoints:", midpoints)
-        # --- 4. Draw centerline ---
+        # --- 4. Draw + Broadcast centerline ---
+        publish_path = Path()
         for m in midpoints:
             X = m[0]
             Z = m[1]
@@ -114,14 +119,51 @@ class ZEDYOLOTrack(Node):
 
             print("Drawing at pixel:", u, v)
             cv2.circle(frame, (u,v), 5, (0,255,0), -1)
+            
+            point = Point()
+            point.x=float(X)
+            point.y=float(Y)
+            point.z=float(Z)
+
+            pose = Pose()
+            pose.position = point
+
+            poseStamped=PoseStamped()
+            poseStamped.pose=pose
+
+            publish_path.poses.append(poseStamped)
+        self.publisher_path.publish(publish_path)
 
 
         cv2.imshow("Track", frame)
         cv2.waitKey(1)
 
 def main(args=None):
+    
+    image = "/zed/zed_node/rgb/color/rect/image"
+    depth = "/zed/zed_node/depth/depth_registered"
+    path = "nrai_perception/resource/best.pt"
+    
     rclpy.init(args=args)
-    node = ZEDYOLOTrack()
+    node = ZEDYOLOTrack(image, depth, path)
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+    cv2.destroyAllWindows()
+
+def eufs(args=None):
+    
+    # Make sure, when running in EUFS_SIM, to disable simulated perception.
+    
+    image = "/zed/image_raw"
+    depth = "/zed/depth/image_raw"
+    path = "../../../resource/best.pt"
+    
+    rclpy.init(args=args)
+    node = ZEDYOLOTrack(image, depth, path)
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
