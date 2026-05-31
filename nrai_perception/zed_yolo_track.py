@@ -28,7 +28,8 @@ class ZEDYOLOTrack(Node):
         self.create_subscription(Image, image, self.rgb_callback, 10)
         self.create_subscription(Image, depth, self.depth_callback, 10)
         
-        self.publisher_path = self.create_publisher(Path, '/path', 10)
+        self.publisher_cones_left = self.create_publisher(Path, '/nrai_perception/cones_left', 10)
+        self.publisher_cones_right = self.create_publisher(Path, '/nrai_perception/cones_right', 10)
 
         self.get_logger().info("ZED YOLO Track Node Started")
 
@@ -89,54 +90,30 @@ class ZEDYOLOTrack(Node):
 
         left.sort(key=lambda p: p[1])               #sort based on Z value
         right.sort(key=lambda p: p[1])
-
-        # --- 3. Compute midpoints ---
-        midpoints = []
-
-        for L in left:
-            best = None
-            min_d = 999
-            for R in right:
-                d = abs(L[1] - R[1])          #diff in z value
-                if d < min_d:                
-                    min_d = d
-                    best = R
-
-            if best:
-                mx = (L[0] + best[0]) / 2
-                mz = (L[1] + best[1]) / 2
-                midpoints.append((mx, mz))
-        print("Midpoints:", midpoints)
-        # --- 4. Draw + Broadcast centerline ---
-        publish_path = Path()
-        for m in midpoints:
-            X = m[0]
-            Z = m[1]
-            Y = -0.22  # assume ground level (20cm below camera)
-
-            u = int(self.cx + X * self.fx / Z)
-            v = int(self.cy + Y * self.fy / Z)
-
-            print("Drawing at pixel:", u, v)
-            cv2.circle(frame, (u,v), 5, (0,255,0), -1)
+        
+        # --- 3. Broadcast cones ---
+        
+        self.publisher_cones_left.publish(self.cones_to_path(left))
+        self.publisher_cones_right.publish(self.cones_to_path(right))
+    
+    def cones_to_path(self, cones):
+        out_cones = Path()
+        for c in cones:
+            cone = Point()
+            cone.x = float(c[0])
+            cone.y = float(-0.22)
+            cone.z = float(c[1])
             
-            point = Point()
-            point.x=float(X)
-            point.y=float(Y)
-            point.z=float(Z)
-
             pose = Pose()
             pose.position = point
 
             poseStamped=PoseStamped()
             poseStamped.pose=pose
-
-            publish_path.poses.append(poseStamped)
-        self.publisher_path.publish(publish_path)
-
-
-        cv2.imshow("Track", frame)
-        cv2.waitKey(1)
+            
+            out_cones.poses.append(poseStamped)
+        
+        return out_cones
+        
 
 def main(args=None):
     
