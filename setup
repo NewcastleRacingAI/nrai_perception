@@ -1,0 +1,9 @@
+echo "Setting up: " $(pwd)
+python3 -m venv ./.venv/
+source ./.venv/bin/activate
+
+echo "Installing requirements"
+pip install -r requirements.txt
+
+echo "Installing ZED API"
+python3 ./get_python_api.py
