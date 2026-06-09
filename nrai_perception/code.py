@@ -78,21 +78,3 @@ class ZEDYOLOTrack():
         # --- 3. Return cones ---
         
         return [left, right]
-    
-    def cones_to_path(self, cones):
-        out_cones = Path()
-        for c in cones:
-            cone = Point()
-            cone.x = float(c[0])
-            cone.y = float(-0.22)
-            cone.z = float(c[1])
-            
-            pose = Pose()
-            pose.position = point
-
-            poseStamped=PoseStamped()
-            poseStamped.pose=pose
-            
-            out_cones.poses.append(poseStamped)
-        
-        return out_cones

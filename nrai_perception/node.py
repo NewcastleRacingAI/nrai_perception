@@ -1,8 +1,10 @@
 import os
 from code import ZEDYOLOTrack
 import pyzed.sl as sl
+import array
+import pickle
 
-fifo_path = '/opt/PERCEPTION_ZedYoloTrack'
+fifo_path = '/tmp/PERCEPTION_ZedYoloTrack'
 
 def main(args=None):
     # --- Set up ZED Camera ---
@@ -29,13 +31,13 @@ def main(args=None):
             zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
             
             node.depth_callback(depth.get_data())
-            new_instruction = node.rgb_callback(image.get_data()).tobytes()
+            new_instruction = node.rgb_callback(image.get_data())
             
             # Write cone bytes
             try:
                 fd = os.open(fifo_path, os.O_WRONLY)
                 with open(fd, "wb") as file:
-                    file.write(new_instruction)
+                    pickle.dump(new_instruction, file)
             except FileNotFoundError:
                 self.get_logger().info("Could not access FIFO. Likely not yet configured.")
             except BrokenPipeError:
