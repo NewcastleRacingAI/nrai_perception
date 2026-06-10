@@ -1,8 +1,12 @@
 import os
 from code import ZEDYOLOTrack
-import pyzed.sl as sl
 import array
 import pickle
+
+try:
+    import pyzed.sl as sl
+except ImportError:
+    raise ImportError("NRAI_PERCEPTION: ZED python API not installed, ZED SDK likely not installed.")
 
 fifo_path = '/tmp/PERCEPTION_ZedYoloTrack'
 
@@ -13,7 +17,7 @@ def main(args=None):
     init_params.sdk_verbose=0
     
     if zed.open(init_params) > sl.ERROR_CODE.SUCCESS:
-        print("Unable to open ZED camera, aborting.")
+        print("NRAI_PERCEPTION: Unable to open ZED camera, aborting.")
         exit(1)
     
     # --- Set up Code ---
@@ -39,9 +43,9 @@ def main(args=None):
                 with open(fd, "wb") as file:
                     pickle.dump(new_instruction, file)
             except FileNotFoundError:
-                self.get_logger().info("Could not access FIFO. Likely not yet configured.")
+                print(f"NRAI_PERCEPTION: Could not access FIFO {fifo_path}. Likely not yet configured.")
             except BrokenPipeError:
-                self.get_logger().info("FIFO terminated")
+                print(f"NRAI_PERCEPTION: FIFO {fifo_path} terminated")
 
 if __name__ == "__main__":
     main()
