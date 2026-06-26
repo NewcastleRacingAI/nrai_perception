@@ -1,5 +1,5 @@
 import os
-from code import ZEDYOLOTrack
+from .code import ZEDYOLOTrack
 import array
 import pickle
 

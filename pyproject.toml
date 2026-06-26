@@ -1,0 +1,11 @@
+[project]
+name = "nrai-perception"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "cython>=3.2.6",
+    "numpy>=2.5.0",
+    "opencv-python>=4.13.0.92",
+    "pyopengl>=3.1.10",
+    "ultralytics>=8.4.79",
+]
