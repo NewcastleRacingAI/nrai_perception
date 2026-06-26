@@ -1,23 +1,28 @@
 import os
 from .code import ZEDYOLOTrack
-import array
 import pickle
+import argparse
+from multiprocessing import Queue
+import numpy as np
+import logging
 
-try:
-    import pyzed.sl as sl
-except ImportError:
-    raise ImportError("NRAI_PERCEPTION: ZED python API not installed, ZED SDK likely not installed.")
+logger = logging.getLogger()
 
 fifo_path = '/tmp/PERCEPTION_ZedYoloTrack'
 
-def main(args=None):
+def handle_zed(args: argparse.Namespace):
+    try:
+        import pyzed.sl as sl
+    except ImportError:
+        raise ImportError("NRAI_PERCEPTION: ZED python API not installed, ZED SDK likely not installed.")
+
     # --- Set up ZED Camera ---
     zed = sl.Camera()
     init_params = sl.InitParameters()
     init_params.sdk_verbose=0
     
     if zed.open(init_params) > sl.ERROR_CODE.SUCCESS:
-        print("NRAI_PERCEPTION: Unable to open ZED camera, aborting.")
+        logger.error("NRAI_PERCEPTION: Unable to open ZED camera, aborting.")
         exit(1)
     
     # --- Set up Code ---
@@ -46,6 +51,40 @@ def main(args=None):
                 print(f"NRAI_PERCEPTION: Could not access FIFO {fifo_path}. Likely not yet configured.")
             except BrokenPipeError:
                 print(f"NRAI_PERCEPTION: FIFO {fifo_path} terminated")
+
+def handle_simulator(args: argparse.Namespace):
+    topics: dict[str, Queue] = args.topics or {}
+
+    # --- Set up Code ---
+    if args.camera_topic not in topics:
+        raise ValueError(f"No '{args.camera_topic}' topic to listen to.")
+
+    camera_queue = topics[args.camera_topic]
+    planning_queue = topics.get(args.planning_topic, None)
+    node = ZEDYOLOTrack()
+    while True:
+        image: np.ndarray = camera_queue.get()
+
+        if image.dtype == np.uint8:
+            new_instruction = node.rgb_callback(image)
+        else:
+            node.depth_callback(image)
+            continue
+        
+        if planning_queue is not None:
+            planning_queue.put(new_instruction)
+
+def main(args: argparse.Namespace | None = None):
+    args = args or argparse.Namespace()
+    logging.basicConfig(format=args.logger_format or "", level=args.verbosity or logging.INFO)
+    logger.info("Initializing...")
+    try:
+        if args.zed:
+            handle_zed(args)
+        else:
+            handle_simulator(args)
+    except KeyboardInterrupt:
+        logger.info("Closing...")
 
 if __name__ == "__main__":
     main()

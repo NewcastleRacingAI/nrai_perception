@@ -1,12 +1,13 @@
 import cv2
 import numpy as np
 from ultralytics import YOLO
+import importlib.resources as resources
+
 
 class ZEDYOLOTrack():
 
     def __init__(self):
-        self.bridge = CvBridge()
-        self.model = YOLO('../resource/best.pt')
+        self.model = YOLO(resources.files("nrai_perception.resource").joinpath("best.pt"))
 
         # ZED intrinsics (tune if needed)
         self.fx = 700.0
@@ -14,12 +15,12 @@ class ZEDYOLOTrack():
         self.cx = 640.0
         self.cy = 360.0
 
-        self.depth_frame = None
+        self.depth_frame: np.ndarray | None = None
 
-    def depth_callback(self, frame):
+    def depth_callback(self, frame: np.ndarray):
         self.depth_frame = frame
 
-    def rgb_callback(self, frame):
+    def rgb_callback(self, frame: np.ndarray):
         if self.depth_frame is None:
             return
         
@@ -56,8 +57,9 @@ class ZEDYOLOTrack():
                 color = (0, 255, 0)      # unknown
             elif cls == 4:
                 color = (0, 255, 255)    # Yellow
-            cv2.circle(frame, (cx, cy), 4, color, -1)
-           
+            circled = cv2.circle(frame, (cx, cy), 4, color, -1)
+            cv2.imshow("Perception", circled)
+            cv2.waitKey(1)
 
             # cv2.circle(frame,(cx,cy),4,(0,255,0),-1)
 
