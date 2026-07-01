@@ -71,7 +71,7 @@ def handle_simulator(args: argparse.Namespace):
             node.depth_callback(image)
             continue
         
-        if planning_queue is not None:
+        if planning_queue is not None and new_instruction is not None:
             planning_queue.put(new_instruction)
 
 def main(args: argparse.Namespace | None = None):
