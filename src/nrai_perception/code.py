@@ -12,8 +12,8 @@ class ZEDYOLOTrack():
         self.model = YOLO(resources.files("nrai_perception.resource").joinpath("best.pt"))
 
         # ZED intrinsics (tune if needed)
-        #self.fx = 220.0
-        #self.fy = 700.0
+        self.fx = 220.0
+        self.fy = 700.0
         self.cx = 320.0
         self.cy = 320.0
 
@@ -36,7 +36,7 @@ class ZEDYOLOTrack():
         cones = []
 
         # --- 1. Convert detections → 3D ---
-        print("new:")
+        #print("new:")
         for det in results[0].boxes:
             x1,y1,x2,y2 = map(int, det.xyxy[0])
             cls = int(det.cls[0])
@@ -45,19 +45,19 @@ class ZEDYOLOTrack():
             cy = int((y1+y2)/2)
 
             depth = float(self.depth_frame[cy,cx])/150
-            if np.isnan(depth) or depth < 0.3 or depth > 20:
+            if np.isnan(depth) or depth < 0.3 or depth > 10:
                 #print(f"triggered: {depth}")
                 continue
 
-            lat_angle = math.atan((cx - self.cx)/self.lens_depth)
+            #lat_angle = math.atan((cx - self.cx)/self.lens_depth)
 
-            Z = depth * math.sin(lat_angle)
-            X = depth * math.cos(lat_angle)
+            #Z = depth * math.sin(lat_angle)
+            #X = depth * math.cos(lat_angle)
 
-            #Z = depth
-            #X = (cx - self.cx) * Z / self.fx
+            Z = depth
+            X = (cx - self.cx) * Z / self.fx
 
-            print(f"({Z}, {X})")
+            #print(f"({Z}, {X})")
 
             cones.append((cls, X, Z))
             # Draw
