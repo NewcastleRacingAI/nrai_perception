@@ -3,6 +3,8 @@ import numpy as np
 from ultralytics import YOLO
 import importlib.resources as resources
 
+import math
+
 
 class ZEDYOLOTrack():
 
@@ -10,10 +12,12 @@ class ZEDYOLOTrack():
         self.model = YOLO(resources.files("nrai_perception.resource").joinpath("best.pt"))
 
         # ZED intrinsics (tune if needed)
-        self.fx = 700.0
-        self.fy = 700.0
-        self.cx = 640.0
-        self.cy = 360.0
+        #self.fx = 220.0
+        #self.fy = 700.0
+        self.cx = 320.0
+        self.cy = 320.0
+
+        self.lens_depth = 210
 
         self.depth_frame: np.ndarray | None = None
 
@@ -26,11 +30,13 @@ class ZEDYOLOTrack():
         
         frame = frame[:, :, :3]
 
+
         results = self.model.predict(frame, conf=0.4, verbose=False)
 
         cones = []
 
         # --- 1. Convert detections → 3D ---
+        print("new:")
         for det in results[0].boxes:
             x1,y1,x2,y2 = map(int, det.xyxy[0])
             cls = int(det.cls[0])
@@ -38,12 +44,20 @@ class ZEDYOLOTrack():
             cx = int((x1+x2)/2)
             cy = int((y1+y2)/2)
 
-            depth = float(self.depth_frame[cy,cx])
+            depth = float(self.depth_frame[cy,cx])/150
             if np.isnan(depth) or depth < 0.3 or depth > 20:
+                #print(f"triggered: {depth}")
                 continue
 
-            Z = depth
-            X = (cx - self.cx) * Z / self.fx
+            lat_angle = math.atan((cx - self.cx)/self.lens_depth)
+
+            Z = depth * math.sin(lat_angle)
+            X = depth * math.cos(lat_angle)
+
+            #Z = depth
+            #X = (cx - self.cx) * Z / self.fx
+
+            print(f"({Z}, {X})")
 
             cones.append((cls, X, Z))
             # Draw
@@ -57,9 +71,9 @@ class ZEDYOLOTrack():
                 color = (0, 255, 0)      # unknown
             elif cls == 4:
                 color = (0, 255, 255)    # Yellow
-            circled = cv2.circle(frame, (cx, cy), 4, color, -1)
-            cv2.imshow("Perception", circled)
-            cv2.waitKey(1)
+            #circled = cv2.circle(frame, (cx, cy), 4, color, -1)
+            #cv2.imshow("Perception", circled)
+            #cv2.waitKey(1)
 
             # cv2.circle(frame,(cx,cy),4,(0,255,0),-1)
 

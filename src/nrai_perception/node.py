@@ -63,6 +63,8 @@ def handle_simulator(args: argparse.Namespace):
     planning_queue = topics.get(args.planning_topic, None)
     node = ZEDYOLOTrack()
     while True:
+        while camera_queue.qsize()>1:
+            camera_queue.get()
         image: np.ndarray = camera_queue.get()
 
         if image.dtype == np.uint8:
