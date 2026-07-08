@@ -63,7 +63,9 @@ def handle_simulator(args: argparse.Namespace):
     planning_queue = topics.get(args.planning_topic, None)
     node = ZEDYOLOTrack()
     while True:
+        logger.debug("Starting loop")
         while camera_queue.qsize() > 1:
+            logger.debug("Emptying queue")
             camera_queue.get_nowait()
         image: np.ndarray = camera_queue.get()
         logger.debug("Received %s", image.shape)
