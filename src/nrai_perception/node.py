@@ -66,7 +66,7 @@ def handle_simulator(args: argparse.Namespace):
         logger.debug("Starting loop")
         while camera_queue.qsize() > 1:
             logger.debug("Emptying queue")
-            camera_queue.get_nowait()
+            camera_queue.get()
         image: np.ndarray = camera_queue.get()
         logger.debug("Received %s", image.shape)
 
