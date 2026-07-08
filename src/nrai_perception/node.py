@@ -66,6 +66,8 @@ def handle_simulator(args: argparse.Namespace):
         while camera_queue.qsize()>1:
             camera_queue.get()
         image: np.ndarray = camera_queue.get()
+        logger.debug("Received %s", image.shape)
+
 
         if image.dtype == np.uint8:
             new_instruction = node.rgb_callback(image)
@@ -75,10 +77,11 @@ def handle_simulator(args: argparse.Namespace):
         
         if planning_queue is not None and new_instruction is not None:
             planning_queue.put(new_instruction)
+            logger.debug("Sent %s", new_instruction)
 
 def main(args: argparse.Namespace | None = None):
     args = args or argparse.Namespace()
-    logging.basicConfig(format=args.logger_format or "", level=args.verbosity or logging.INFO)
+    logging.basicConfig(format=args.logger_format or "", level=args.actual_verbosity() if args.actual_verbosity else logging.INFO)
     logger.info("Initializing...")
     try:
         if args.zed:
