@@ -81,8 +81,7 @@ def handle_simulator(args: argparse.Namespace):
             planning_queue.put(new_instruction)
             logger.debug("Sent %s", new_instruction)
 
-def main(args: argparse.Namespace | None = None):
-    args = args or argparse.Namespace()
+def main(args: argparse.Namespace):
     logging.basicConfig(format=args.logger_format or "", level=args.actual_verbosity() if args.actual_verbosity else logging.INFO)
     logger.info("Initializing...")
     try:

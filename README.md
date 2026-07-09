@@ -13,101 +13,60 @@ cd nrai_perception
 
 ```bash
 nrai_perception
-├── resource
-│   └── nrai_perception # File marking the ros package name
 ├── src
 │   └── nrai_perception
-│       ├── ros.py      # Ros node 
+│       ├── node.py     # Node
 │       ├── ...         # Main code
 │       └── __init__.py
 ├── test                # Tests
-├── package.xml         # Ros2 package configuration
-├── setup.cfg           # Ros2 python paths
-└── setup.py            # Python configuration
+└── pyproject.toml      # Python package configuration
 ```
 
-- **To add python dependencies** add them to the `setup.py` file
-- **To add ros2 depedencies** add them to the `package.xml` file
+## Use
 
-## Setup (standalone)
+### Requirements
 
-Despite being part of the **nrai** collection of packages created by the Newcastle Racing AI group, this package can also be used in standalone mode, which **does not** require a ROS installation.
+- [Python>=3.12](https://www.python.org/downloads/release/python-3120/)
+- [uv](https://docs.astral.sh/uv/)
+  - Can be installed with pip globally
 
-### Install the python package
+### Setup
 
-As a preliminary optional step, consider creating a virtual envirnoment with any tool you commonly use
+Recommended, although not mandatory: create a virtual environment.
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate # On Linux
-.venv/script/activate # On Windows
+# Linux
+source .venv/bin/activate
+# Windows
+.venv/Script/activate
 ```
 
-Then, use pip to install the package locally in edit mode (`-e`)
+We use [uv](https://docs.astral.sh/uv/) to manage the dependencies.
+Therefore, you need to install uv, either globally or in the virtual environment:
 
+```bash
+pip install uv
 ```
-pip3 install -e .[standalone]
-```
-
-> [!NOTE]  
-> If you are having issues during the installation, consider removing the `-e` flag, or adding the `--user` flag.
-
-All changes you make to the package will be effective immediately, without the need of reinstalling it (provided you are using the `-e` flag).
 
 ### Use
 
-When in standalone mode, the package provides a specialized entrypoint
+Run the script with the following command:
 
 ```bash
-python3 -m nrai_perception <path to rosbag>
+uv run nrai_perception
 ```
 
-The entrypoint expects a [rosbag2](https://github.com/ros2/rosbag2) file.
-In simple terms, a recording of the messages exchanged by the topics in a ROS network.
+### Managing dependencies
 
-#### List of topics
-
-If no other arguments are provided, the entrypoint will list all the topics in the rosbag
+If you want to add new python dependencies, use `uv add <package>` to add them automatically.
 
 ```bash
-python3 -m nrai_perception <path to rosbag>
+uv add numpy
 ```
 
-#### List of messages in a topic
-
-To list all the messages in a specific topic, use the `--list-messages` argument
+On the other hand, if you want to remove a dependency, use `uv remove <package>`.
 
 ```bash
-python3 -m nrai_perception <path to rosbag> --topic <topic name> 
-```
-
-Note that this operation may take a while if the rosbag is large, and the output may be very long.
-
-#### Playback the rosbag
-
-To playback the rosbag, use the `--play` argument
-
-```bash
-python3 -m nrai_perception <path to rosbag> --play
-```
-
-All the messages in the rosbag will be processed in order and sent through the `process_msg` function in the `nrai_perception.__main__` file.
-The function will then filter only the topics it is interested in, and call the appropriate processing functions from the `nrai_perception.code` module.
-Then, it is up to you to modify those functions to implement your own perception algorithms.
-
-```mermaid
-flowchart LR
-bag[Rosbag2 file]
-subgraph nrai_perception
-    direction TB
-    p[process_msg]
-    i[process_pose]
-    c[process_camera]
-    m[process_image]
-end
-
-bag --> p
-p --> i
-p --> c
-p --> m
+uv remove numpy
 ```
