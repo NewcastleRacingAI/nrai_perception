@@ -84,13 +84,10 @@ def handle_simulator(args: argparse.Namespace):
 def main(args: argparse.Namespace):
     logging.basicConfig(format=args.logger_format or "", level=args.actual_verbosity() if args.actual_verbosity else logging.INFO)
     logger.info("Initializing...")
-    try:
-        if args.zed:
-            handle_zed(args)
-        else:
-            handle_simulator(args)
-    except KeyboardInterrupt:
-        logger.info("Closing...")
+    if args.zed:
+        handle_zed(args)
+    else:
+        handle_simulator(args)
 
 if __name__ == "__main__":
     main()
