@@ -8,7 +8,27 @@ import logging
 
 logger = logging.getLogger()
 
-fifo_path = '/tmp/PERCEPTION_ZedYoloTrack'
+lap_count = 0
+lap_state = False # Where True is about to lap, and False is pre-lap / post-lap.
+
+def connect_socket():
+    while True:
+        try:
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
+            s.connect(socket_path)
+            logger.info("Connected to NIMS")
+            return s
+        except:
+            logger.error("Could not connect to NIMS, retrying in 1 second...")
+            sleep(1)
+
+def send_lap(sock):
+    packet = struct.pack("<Bf", 0x06, 0x00000000)
+    try:
+        sock.sendall(packet)
+        return True
+    except:
+        return False
 
 def handle_zed(args: argparse.Namespace):
     try:
@@ -34,23 +54,21 @@ def handle_zed(args: argparse.Namespace):
     # --- Execute loop ---
     image, depth = sl.Mat(), sl.Mat()
     runtime_parameters = sl.RuntimeParameters()
+
+    planning_queue = topics.get(args.planning_topic, None)
+
     while True:
         if zed.grab(runtime_parameters):
             zed.retrieve_image(image, sl.VIEW.LEFT)
             zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
             
             node.depth_callback(depth.get_data())
-            new_instruction = node.rgb_callback(image.get_data())
+            new_instruction, orange_cones = node.rgb_callback(image.get_data())
             
-            # Write cone bytes
-            try:
-                fd = os.open(fifo_path, os.O_WRONLY)
-                with open(fd, "wb") as file:
-                    pickle.dump(new_instruction, file)
-            except FileNotFoundError:
-                print(f"NRAI_PERCEPTION: Could not access FIFO {fifo_path}. Likely not yet configured.")
-            except BrokenPipeError:
-                print(f"NRAI_PERCEPTION: FIFO {fifo_path} terminated")
+            # Pass forward cone positions
+            if planning_queue is not None and new_instruction is not None:
+                planning_queue.put(new_instruction)
+                logger.debug("Sent %s", new_instruction)
 
 def handle_simulator(args: argparse.Namespace):
     topics: dict[str, Queue] = args.topics or {}
@@ -70,9 +88,31 @@ def handle_simulator(args: argparse.Namespace):
         image: np.ndarray = camera_queue.get()
         logger.debug("Received %s", image.shape)
 
-
         if image.dtype == np.uint8:
-            new_instruction = node.rgb_callback(image)
+            new_instruction, orange_cones = node.rgb_callback(image)
+
+            # State machine for lap detection
+            if not lap_state:
+                # No immenent lap detected
+                if not orange_cones:
+                    lap_count=0
+                else:
+                    lap_count+=1
+                if lap_count>2:
+                    lap_state=True
+            elif not orange_cones:
+                # Immenent lap detected and no orange cones
+                lap_count -= 1
+                if lap_count<=0:
+                    # Lap detected.
+                    lap_state = False
+                    while not send_lap(s):
+                        # If this loops forever, NIMS is dead anyways.
+                        s = connect_socket()
+            else:
+                # Immenent lap detected and orange cones
+                lap_count = 3
+                
         else:
             node.depth_callback(image)
             continue

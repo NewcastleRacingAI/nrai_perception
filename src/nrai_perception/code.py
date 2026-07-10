@@ -37,6 +37,7 @@ class ZEDYOLOTrack():
 
         # --- 1. Convert detections → 3D ---
         #print("new:")
+        lap = [False, False]
         for det in results[0].boxes:
             x1,y1,x2,y2 = map(int, det.xyxy[0])
             cls = int(det.cls[0])
@@ -61,21 +62,31 @@ class ZEDYOLOTrack():
 
             cones.append((cls, X, Z))
             # Draw
-            if cls == 0:
-                color = (255, 0, 0)      # Blue
-            elif cls == 1:
-                color = (0, 0, 255)      # large_orange
-            elif cls == 2:
-                color = (0, 165, 255)    # Orange
-            elif cls == 3:
-                color = (0, 255, 0)      # unknown
-            elif cls == 4:
-                color = (0, 255, 255)    # Yellow
+            match cls:
+                case 0:
+                    color = (255, 0, 0)      # Blue
+                case 1:
+                    color = (0, 0, 255)      # large_orange
+                    
+                    # Determine whether lap imminent
+                    length = self.depth_frame.shape[0]
+                    if cx < 0.4*length and not lap[0]:
+                        lap[0] = True
+                    if cx > 0.6*length and not lap[1]:
+                        lap[1] = True
+                case 2:
+                    color = (0, 165, 255)    # Orange
+                case 3:
+                    color = (0, 255, 0)      # unknown
+                case 4:
+                    color = (0, 255, 255)    # Yellow
             #circled = cv2.circle(frame, (cx, cy), 4, color, -1)
             #cv2.imshow("Perception", circled)
             #cv2.waitKey(1)
 
             # cv2.circle(frame,(cx,cy),4,(0,255,0),-1)
+        
+        lap = lap[0] and lap[1]
 
         # --- 2. Separate left & right ---
         left = []
@@ -93,4 +104,4 @@ class ZEDYOLOTrack():
         
         # --- 3. Return cones ---
         
-        return [left, right]
+        return [left, right], lap
