@@ -23,7 +23,7 @@ def connect_socket():
             sleep(1)
 
 def send_lap(sock):
-    packet = struct.pack("<Bf", 0x06, 0x00000000)
+    packet = struct.pack("<BI", 0x06, 0x00000000)
     try:
         sock.sendall(packet)
         return True
