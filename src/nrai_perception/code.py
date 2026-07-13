@@ -26,7 +26,7 @@ class ZEDYOLOTrack():
 
     def rgb_callback(self, frame: np.ndarray):
         if self.depth_frame is None:
-            return
+            return None, None
         
         frame = frame[:, :, :3]
 

@@ -71,6 +71,8 @@ def handle_zed(args: argparse.Namespace):
                 logger.debug("Sent %s", new_instruction)
 
 def handle_simulator(args: argparse.Namespace):
+    global lap_count
+    global lap_state
     topics: dict[str, Queue] = args.topics or {}
 
     # --- Set up Code ---
@@ -90,6 +92,7 @@ def handle_simulator(args: argparse.Namespace):
 
         if image.dtype == np.uint8:
             new_instruction, orange_cones = node.rgb_callback(image)
+            if new_instruction==None: continue
 
             # State machine for lap detection
             if not lap_state:
