@@ -69,10 +69,10 @@ class ZEDYOLOTrack():
                     color = (0, 0, 255)      # large_orange
                     
                     # Determine whether lap imminent
-                    length = self.depth_frame.shape[0]
-                    if cx < 0.4*length and not lap[0]:
+                    length = self.depth_frame.shape[1]
+                    if (cx < 0.4*length and not lap[0]) and depth<4:
                         lap[0] = True
-                    if cx > 0.6*length and not lap[1]:
+                    if cx > 0.6*length and not lap[1] and depth<4:
                         lap[1] = True
                 case 2:
                     color = (0, 165, 255)    # Orange
