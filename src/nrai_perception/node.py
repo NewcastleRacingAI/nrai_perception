@@ -48,23 +48,28 @@ def handle_zed(args: argparse.Namespace):
     # --- Set up Code ---
     node = ZEDYOLOTrack()
     
-    # --- Set up IPC ---
-    os.mkfifo(fifo_path, 0o600)
-    
     # --- Execute loop ---
     image, depth = sl.Mat(), sl.Mat()
     runtime_parameters = sl.RuntimeParameters()
 
+    camera_queue = topics[args.camera_topic]
     planning_queue = topics.get(args.planning_topic, None)
 
     while True:
         if zed.grab(runtime_parameters):
-            zed.retrieve_image(image, sl.VIEW.LEFT)
-            zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
-            
-            node.depth_callback(depth.get_data())
-            new_instruction, orange_cones = node.rgb_callback(image.get_data())
-            
+            while camera_queue.qsize() > 1:
+                logger.debug("Emptying queue")
+                camera_queue.get()
+
+            try:
+                zed.retrieve_image(image, sl.VIEW.LEFT)
+                zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
+
+                node.depth_callback(depth.get_data())
+                new_instruction, orange_cones = node.rgb_callback(image.get_data())
+                if new_instruction is None: raise Exception("Depth not yet initialised")
+            except:
+                continue
             # Pass forward cone positions
             if planning_queue is not None and new_instruction is not None:
                 planning_queue.put(new_instruction)
